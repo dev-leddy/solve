@@ -1,0 +1,1 @@
+var wordlist = ["hyped", "hyper","hypes", "corn", "hermit", "string"];

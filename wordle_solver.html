@@ -1,0 +1,263 @@
+
+
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	
+	<link href="bootstrap.css" rel="stylesheet" type="text/css" />
+	<link href="bootstrap-vue-2.19.0.min.css" rel="stylesheet" type="text/css" />
+	<script src="vue-2.6.12.min.js" type="text/javascript"></script>
+    <script src="bootstrap-vue-2.19.0.min.js" type="text/javascript"></script>
+    <script src="bootstrap-vue-icons-2.19.0.min.js" type="text/javascript"></script>
+    <script src="Sortable-1.4.2.js" type="text/javascript"></script>
+    <script src="vue-sortable-0.1.3.js" type="text/javascript"></script>
+    <script src="css-vars-ponyfill-2.4.2.min.js" type="text/javascript"></script>
+	<script src="word-list.js" type="text/javascript"></script>
+  </head>
+	<style>
+	body{
+		background-color: #212121;
+		color: white;
+	}
+	
+	.letter-box{
+		width:62px;
+		height:62px;
+		font-size: 2rem;
+		font-weight: bold;
+		text-align:center;
+		text-transform: uppercase;
+	}
+	
+	.correct-spot, .correct-spot:focus{
+		background-color: #6aaa64;
+		color: white !important;
+	}
+		
+	.wrong-spot, .wrong-spot:focus{
+		background-color: #c9b458;
+		color: white !important;
+	}
+	
+	.not-in-word, .not-in-word:focus{
+		background-color: #787c7e;
+		color: white !important;
+	}
+	
+	.word-list{
+		margin-top:auto;
+		height: 100%;
+		overflow-x: hidden;
+	}
+
+	.word-list-item{
+		width: 70px;
+		margin-top: 3px;
+		margin-left: 1px;
+		margin-right: 1px;
+		text-align: center;
+		border-radius: 25px;
+		border: 2px solid #969696;
+	}
+	
+	.word-list-item:hover{
+		cursor: pointer;		
+		color: #96c180;
+		border: 2px solid #96c180;
+	}
+
+	
+	</style>
+
+	<div id="WordleSolver" class="d-flex flex-column">
+		<div class="d-flex" style="height: 50px">
+			<h5 class="mx-auto my-auto">World Solver</h5>
+		</div>
+		<div class="d-flex">
+			<div class="d-flex flex-column mt-1 mx-auto my-auto" style="width: 40%">
+				<div :id="guessKey" v-for="(guess, guessKey) in guesses" class="d-flex mx-auto">
+					<div v-for="(letter, letterKey) in guess" class="d-flex flex-column mt-2">	
+						<b-form-input :id="guessKey + '_' + letterKey" class="mx-1 letter-box disable-select" :class="letter.state" v-model="letter.char" @keydown="checkCharacter($event, letter)" @keyup="focusNextInput($event, guessKey, letterKey)" @dblclick="changeState(guessKey, letterKey, letter.char)" :maxlength="1"></b-form-input>
+						<b-button size="sm" pill class="mx-auto mt-1" @click="changeState(guessKey, letterKey, letter.char)"><b-icon icon="arrow-counterclockwise" font-scale="1"></b-icon></b-button>	
+					</div>
+				</div>
+			</div>
+			<div class="d-flex" style="width: 20%">
+				<b-button class="mx-auto my-auto" @click="filterAnswers()">Process</b-button> 
+			</div>
+			<div class="d-flex flex-column" style="height:calc(100vh - 100px); width: 40%">
+				<div class="mx-auto my-auto">				
+					<div>Remaining words: {{possibleAnswers.length}}</div>
+				</div>
+				<div class="word-list d-flex flex-wrap">
+					<div v-for="word in possibleAnswers" class="word-list-item" @click="addWord(word)">
+						{{word}}
+					</div>
+					<!-- {{possibleAnswers}} -->
+				</div>
+			</div>
+		</div>
+		<div class="d-flex" style="height: 50px">
+			<small class="mt-auto mx-auto"></small>
+		</div>		
+	</div>
+</html>
+
+<script>
+	const WordleSolver = new Vue({
+		el: '#WordleSolver',
+		data: {
+			guesses:{
+					guess1: {0: {char: '', state: 'not-in-word'}, 1: {char: '', state: 'not-in-word'}, 2: {char: '', state: 'not-in-word'}, 3: {char: '', state: 'not-in-word'}, 4: {char: '', state: 'not-in-word'}},
+					guess2: {0: {char: '', state: 'not-in-word'}, 1: {char: '', state: 'not-in-word'}, 2: {char: '', state: 'not-in-word'}, 3: {char: '', state: 'not-in-word'}, 4: {char: '', state: 'not-in-word'}},
+					guess3: {0: {char: '', state: 'not-in-word'}, 1: {char: '', state: 'not-in-word'}, 2: {char: '', state: 'not-in-word'}, 3: {char: '', state: 'not-in-word'}, 4: {char: '', state: 'not-in-word'}},
+					guess4: {0: {char: '', state: 'not-in-word'}, 1: {char: '', state: 'not-in-word'}, 2: {char: '', state: 'not-in-word'}, 3: {char: '', state: 'not-in-word'}, 4: {char: '', state: 'not-in-word'}},
+					guess5: {0: {char: '', state: 'not-in-word'}, 1: {char: '', state: 'not-in-word'}, 2: {char: '', state: 'not-in-word'}, 3: {char: '', state: 'not-in-word'}, 4: {char: '', state: 'not-in-word'}},
+					guess6: {0: {char: '', state: 'not-in-word'}, 1: {char: '', state: 'not-in-word'}, 2: {char: '', state: 'not-in-word'}, 3: {char: '', state: 'not-in-word'}, 4: {char: '', state: 'not-in-word'}}
+			},
+			possibleAnswers: wordlist,
+			exclude: new Set(),
+			includes: new Set(),
+			letterPositions: new Array(5),
+			includedLetterWrongPosition: new Object()
+		},
+		methods:{
+			addWord(word){
+				for(var guess in this.guesses){
+					if(this.guesses[guess][4].char == ''){
+						this.guesses[guess][0].char = word[0];
+						this.guesses[guess][1].char = word[1];
+						this.guesses[guess][2].char = word[2];
+						this.guesses[guess][3].char = word[3];
+						this.guesses[guess][4].char = word[4];
+						break;
+					}
+				}
+			},
+		    checkCharacter(evt, letterObj){
+				if(evt.key.length > 1) return;
+
+				if(evt.key < 65 || evt.key > 90){
+					evt.preventDefault();
+					return;
+				}
+				else {
+					letterObj.char = evt.key;
+				}
+			},
+			changeState(guessKey, letterKey, char){
+				if(!char) return;
+				var object = this.guesses[guessKey][letterKey].state;
+				
+				if(object == "correct-spot"){			
+					Vue.set(this.guesses[guessKey][letterKey], "state", "wrong-spot"); 
+				}
+				else if(object == "wrong-spot"){
+					Vue.set(this.guesses[guessKey][letterKey], "state", "not-in-word"); 
+				}
+				else if(object == "not-in-word"){
+					Vue.set(this.guesses[guessKey][letterKey], "state", "correct-spot"); 
+				}
+				else{
+					Vue.set(this.guesses[guessKey][letterKey], "state", "correct-spot");				
+				}								
+			},
+			filterAnswers(){	
+				this.exclude.clear();
+				this.includes.clear();
+				this.letterPositions = [];
+
+				for(var guess in this.guesses){
+					for(var position in this.guesses[guess]){
+						letterObject = this.guesses[guess][position];
+
+						if(letterObject.char != ""){
+							if(letterObject.state == "not-in-word" && this.includes.has(letterObject.char) == false){
+								this.exclude.add(letterObject.char);								
+							}
+							if(letterObject.state == "correct-spot"){
+								this.includes.add(letterObject.char);
+
+								this.letterPositions[position] = letterObject.char;
+							}
+							if(letterObject.state == "wrong-spot"){
+								this.includes.add(letterObject.char);
+
+								if(!this.includedLetterWrongPosition[letterObject.char]){
+									this.includedLetterWrongPosition[letterObject.char] = new Set();
+								}
+								
+								this.includedLetterWrongPosition[letterObject.char].add(parseInt(position));
+								
+								
+								if(this.exclude.has(letterObject.char)){
+									this.exclude.delete(letterObject.char);
+								}
+							}
+						}
+					}
+				}
+				console.log("Excluded letters:", this.exclude);
+				console.log("Included letter wrong position:", this.includes);
+				console.log("Correct letter positions:", this.letterPositions);		
+
+				var includesArr = Array.from(this.includes);
+				var excludedArr = Array.from(this.exclude);
+
+				var newPossibilities = [];
+				
+				for(var word of wordlist){
+					var addToList = true;
+
+					//check exclusions
+					for(var letter of excludedArr){
+						//skip this word if it includes an excluded letter
+						if(word.includes(letter)){
+							addToList = false;
+							break;
+						}
+					}
+
+					if(addToList == false) continue;
+					if(word == "agree"){
+						console.log("hjehjehehe");
+					}
+					for(var letter of includesArr){
+						//includes at least one letter? cool, lets check if we have and specific idx requirements
+						if(word.includes(letter)){							
+							for(var i = 0; i < word.length; i++){
+								if(this.letterPositions[i] != undefined && this.letterPositions[i] != word[i]){
+									addToList = false;
+									break;
+								}
+								if(this.includedLetterWrongPosition[word[i]] && this.includedLetterWrongPosition[word[i]].has(i)){
+									addToList = false;
+									break;
+								}
+							}
+						}
+						else {
+							addToList = false;
+							break;
+						}
+					}
+
+					if(addToList == true){
+						newPossibilities.push(word);
+					}
+				}
+				this.possibleAnswers = newPossibilities;
+			},
+			focusNextInput(evt, guessKey, letterKey){
+				if(letterKey == 4 || evt.key == "Backspace" || evt.key == "Tab") return;
+
+				var newLetterKey = parseInt(letterKey) + 1;
+
+				document.getElementById(guessKey + "_" + newLetterKey).focus();
+			}
+		}
+	});
+</script>
